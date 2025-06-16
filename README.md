@@ -24,9 +24,7 @@ The procedure to add the macro is the following:
 1. In the VBA window, click anywhere inside the macro code.
 2. Press `F5` or go to **Run → Run Sub/UserForm**.
 
-💡 This will add a **blue progress bar at the bottom** of each slide, indicating its position in the presentation.
-
-How to change macro:
+# ***How to change macro:****
 
 Where can I change the width of the bar:
 
