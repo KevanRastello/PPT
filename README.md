@@ -1,4 +1,4 @@
-The procedure to add the macro is the following:
+# Implement the macro
 
 #### 🧰 1. **Enable Developer Tab (if not already visible)**
 
@@ -117,11 +117,5 @@ Dim barColorActive As Long: barColorActive = RGB(0, 176, 240) ' Blue bar
 
 ---
 
-Let me know if you'd like:
-
-* Bars to **fade in or animate**.
-* Labels to be **centered globally** rather than equally spaced.
-* Fonts or bars to **match the slide master**.
-
-Happy to help!
+I tried to make the macro more modular and easier to edit by centralizing user-defined!
 
