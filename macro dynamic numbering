@@ -1,76 +1,107 @@
 Sub AddCustomSlideNumbers()
+    ' Purpose:
+    ' This macro adds custom slide numbers (e.g., "1 / 13") to the bottom-right of slides.
+    ' It lets you specify which slides should be numbered, auto-adjusts the text box to fit the number,
+    ' and allows custom font size, color, and positioning.
+    ' It also supports inverting the text color (e.g., white) for dark-background slides.
 
     ' === USER SETTINGS ===
-    Dim startSlide As Integer: startSlide = 2      ' << First slide to number
-    Dim endSlide As Integer: endSlide = 14         ' << Last slide to number
+    
+    ' Define which slides to start and stop numbering
+    Dim startSlide As Integer: startSlide = 2      ' First slide to number (inclusive)
+    Dim endSlide As Integer: endSlide = 14         ' Last slide to number (inclusive)
 
-    Dim fontSize As Integer: fontSize = 18         ' << Font size
-    Dim fontName As String: fontName = "Calibri"   ' << Font type
-    Dim marginRight As Single: marginRight = 20    ' << Distance from right edge
-    Dim marginBottom As Single: marginBottom = 15  ' << Distance from bottom edge
+    ' Appearance of the slide number text
+    Dim fontSize As Integer: fontSize = 18         ' Font size
+    Dim fontName As String: fontName = "Calibri"   ' Font name
 
-    Dim textColorDefault As Long: textColorDefault = RGB(0, 0, 0)       ' << Default (black)
-    Dim textColorInverted As Long: textColorInverted = RGB(255, 255, 255) ' << For dark backgrounds (white)
+    ' Positioning of the number box (distance from slide edges)
+    Dim marginRight As Single: marginRight = 20    ' Distance from right edge of slide
+    Dim marginBottom As Single: marginBottom = 15  ' Distance from bottom edge of slide
 
-    ' === SLIDES TO INVERT COLOR ===
+    ' Text colors
+    Dim textColorDefault As Long: textColorDefault = RGB(0, 0, 0)          ' Default (black)
+    Dim textColorInverted As Long: textColorInverted = RGB(255, 255, 255)  ' For dark slides (white)
+
+    ' List of slides where the background is dark and white font should be used
     Dim invertColorSlides As Variant
-    invertColorSlides = Array(6, 7, 10)  ' << Put slide numbers here with dark background
+    invertColorSlides = Array(4, 7, 10)  ' <<< Customize this list for your dark-background slides
 
     ' === INTERNAL SETUP ===
+    
+    ' Variables to hold slide object and shape
     Dim sld As Slide, shp As Shape
-    Dim slideWidth As Single: slideWidth = ActivePresentation.PageSetup.slideWidth
-    Dim slideHeight As Single: slideHeight = ActivePresentation.PageSetup.slideHeight
 
+    ' Get the size of the slide to compute proper positioning
+    Dim slideWidth As Single: slideWidth = ActivePresentation.PageSetup.SlideWidth
+    Dim slideHeight As Single: slideHeight = ActivePresentation.PageSetup.SlideHeight
+
+    ' Set up counter for the number displayed (1-based count)
     Dim currentNumber As Integer: currentNumber = 1
     Dim totalNumber As Integer: totalNumber = endSlide - startSlide + 1
 
-    ' === APPLY TO EACH SLIDE IN RANGE ===
+    ' === MAIN LOOP: Go through all slides ===
     For Each sld In ActivePresentation.Slides
-        If sld.slideIndex >= startSlide And sld.slideIndex <= endSlide Then
+        ' Only process slides within the specified numbering range
+        If sld.SlideIndex >= startSlide And sld.SlideIndex <= endSlide Then
 
-            ' Determine whether to use inverted text color
+            ' ==== COLOR DECISION: Invert if current slide is in the "invertColorSlides" list ====
             Dim useInvertedColor As Boolean: useInvertedColor = False
             Dim i As Integer
             For i = LBound(invertColorSlides) To UBound(invertColorSlides)
-                If sld.slideIndex = invertColorSlides(i) Then
+                If sld.SlideIndex = invertColorSlides(i) Then
                     useInvertedColor = True
                     Exit For
                 End If
             Next i
 
+            ' Choose the correct color based on the condition above
             Dim currentColor As Long
             currentColor = IIf(useInvertedColor, textColorInverted, textColorDefault)
 
-            ' Remove any existing custom number
+            ' ==== REMOVE OLD SHAPE ====
+            ' If a previous custom number exists, delete it to avoid duplicates
             For Each shp In sld.Shapes
                 If shp.Name = "SlideNum_Custom" Then shp.Delete
             Next shp
 
-            ' Add text box with dummy size
+            ' ==== ADD NEW NUMBER ====
+            ' Add a new textbox with a dummy size; we will autosize it to fit the number text
             Set shp = sld.Shapes.AddTextbox( _
                 Orientation:=msoTextOrientationHorizontal, _
                 Left:=0, Top:=0, Width:=10, Height:=10)
 
+            ' Set all the formatting and text content
             With shp
-                .Name = "SlideNum_Custom"
-                .TextFrame.TextRange.Text = currentNumber & " / " & totalNumber
+                .Name = "SlideNum_Custom"  ' Unique name to find/delete later
+                .TextFrame.TextRange.Text = currentNumber & " / " & totalNumber  ' e.g., "2 / 13"
                 .TextFrame.TextRange.Font.Size = fontSize
                 .TextFrame.TextRange.Font.Name = fontName
                 .TextFrame.TextRange.Font.Color.RGB = currentColor
+
+                ' Align text to the right and anchor it to the bottom of the textbox
                 .TextFrame.TextRange.ParagraphFormat.Alignment = ppAlignRight
                 .TextFrame.VerticalAnchor = msoAnchorBottom
-                .TextFrame.WordWrap = msoFalse                           ' Prevent text from stacking
-                .TextFrame.AutoSize = ppAutoSizeShapeToFitText          ' Resize box to fit text
+
+                ' Prevent line breaks (i.e., keep "5 / 13" on one line)
+                .TextFrame.WordWrap = msoFalse
+
+                ' Automatically resize textbox to fit the text
+                .TextFrame.AutoSize = ppAutoSizeShapeToFitText
+
+                ' Hide textbox border
                 .Line.Visible = msoFalse
             End With
 
-            ' Move to bottom-right corner
+            ' ==== POSITION THE TEXT BOX ====
+            ' Move the box to the bottom-right corner with margins
             shp.Left = slideWidth - shp.Width - marginRight
             shp.Top = slideHeight - shp.Height - marginBottom
 
-            ' Lock to prevent accidental edits
+            ' Lock the shape so it can't be moved by mistake
             shp.Locked = msoTrue
 
+            ' Increase the counter (e.g., from 1 to 2 to 3...)
             currentNumber = currentNumber + 1
         End If
     Next sld
