@@ -2,21 +2,20 @@ Sub AddSectionLabelsWithHighlightBar()
 
     ' === USER SETTINGS ===
     Dim sectionInfo As Variant
-    ' Change the number and name of the section
     sectionInfo = Array( _
         Array("Introduction", 3), _
         Array("Biology", 6), _
         Array("Model", 10), _
         Array("Take-home", 12), _
-        Array("Conlusion", 13) _
+        Array("Conclusion", 13) _
     )
-    
-    Dim fontSizeText As Integer: fontSizeText = 16
+
+    Dim fontSizeText As Integer: fontSizeText = 20
     Dim fontName As String: fontName = "Calibri"
-    
     Dim bannerTop As Single: bannerTop = 5
-    Dim barHeight As Single: barHeight = 3
-    Dim spacingPadding As Single: spacingPadding = 10  ' Extra space between labels
+    Dim barHeight As Single: barHeight = 2 ' Line thickness
+
+    Dim useLineUnderline As Boolean: useLineUnderline = True ' << TRUE = use line, FALSE = rectangle
 
     Dim textColorActive As Long: textColorActive = RGB(0, 0, 0)
     Dim textColorInactive As Long: textColorInactive = RGB(150, 150, 150)
@@ -45,8 +44,9 @@ Sub AddSectionLabelsWithHighlightBar()
     Dim sld As Slide, shp As Shape
     Dim sldIndex As Integer, sectionIndex As Integer
     Dim isActive As Boolean, labelCenter As Single
-    Dim labelWidth As Single, labelLeft As Single
+    Dim labelWidth As Single, labelLeft As Single, textWidth As Single
     Dim labelTop As Single: labelTop = bannerTop
+    Dim barLeft As Single, barWidth As Single
 
     ' === APPLY TO EACH SLIDE ===
     For Each sld In ActivePresentation.Slides
@@ -76,7 +76,7 @@ Sub AddSectionLabelsWithHighlightBar()
             ' Create text label
             Set shp = sld.Shapes.AddTextbox( _
                 Orientation:=msoTextOrientationHorizontal, _
-                Left:=0, Top:=labelTop, Width:=100, Height:=20)
+                Left:=0, Top:=labelTop, Width:=300, Height:=20)
             With shp
                 .Name = "SectionLabel_" & i
                 .TextFrame2.TextRange.Text = sectionNames(i)
@@ -85,31 +85,47 @@ Sub AddSectionLabelsWithHighlightBar()
                 .TextFrame2.TextRange.Font.Bold = isActive
                 .TextFrame2.TextRange.Font.Fill.ForeColor.RGB = IIf(isActive, textColorActive, textColorInactive)
                 .TextFrame2.TextRange.ParagraphFormat.Alignment = ppAlignCenter
+                .TextFrame2.WordWrap = msoFalse
                 .TextFrame2.VerticalAnchor = msoAnchorMiddle
                 .TextFrame2.AutoSize = msoAutoSizeShapeToFitText
-                .Height = .Height + 4 ' Prevent clipping (like "n" being cut)
                 .Line.Visible = msoFalse
             End With
 
-            ' Reposition to center in slot
+            ' Reposition centered
             labelWidth = shp.Width
             labelLeft = labelCenter - labelWidth / 2
+            If labelLeft < 0 Then labelLeft = 0
             shp.Left = labelLeft
-
-            ' Lock the label
-            shp.LockAspectRatio = msoFalse
             shp.Locked = msoTrue
 
-            ' Add underline bar
-            Set shp = sld.Shapes.AddShape(msoShapeRectangle, _
-                Left:=labelLeft, Top:=labelTop + shp.Height, Width:=labelWidth, Height:=barHeight)
-            With shp
-                .Name = "SectionLine_" & i
-                .Fill.ForeColor.RGB = IIf(isActive, barColorActive, barColorInactive)
-                .Line.Visible = msoFalse
-                .LockAspectRatio = msoFalse
-                .Locked = msoTrue
-            End With
+            ' === ADD UNDERLINE BAR ===
+            textWidth = shp.TextFrame2.TextRange.BoundWidth
+            barWidth = textWidth
+            barLeft = labelCenter - barWidth / 2
+
+            If useLineUnderline Then
+                ' Use line shape for the underline
+                Set shp = sld.Shapes.AddLine( _
+                    BeginX:=barLeft, BeginY:=labelTop + shp.Height + 1, _
+                    EndX:=barLeft + barWidth, EndY:=labelTop + shp.Height + 1)
+                With shp
+                    .Name = "SectionLine_" & i
+                    .Line.ForeColor.RGB = IIf(isActive, barColorActive, barColorInactive)
+                    .Line.Weight = barHeight
+                    .Locked = msoTrue
+                End With
+            Else
+                ' Fallback to rectangle
+                Set shp = sld.Shapes.AddShape(msoShapeRectangle, _
+                    Left:=barLeft, Top:=labelTop + shp.Height, Width:=barWidth, Height:=barHeight)
+                With shp
+                    .Name = "SectionLine_" & i
+                    .Fill.ForeColor.RGB = IIf(isActive, barColorActive, barColorInactive)
+                    .Line.Visible = msoFalse
+                    .LockAspectRatio = msoFalse
+                    .Locked = msoTrue
+                End With
+            End If
         Next i
     Next sld
 End Sub
