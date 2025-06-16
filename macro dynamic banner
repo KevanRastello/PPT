@@ -3,32 +3,20 @@
 ' ----------------------------
 Function DarkerRGB(r As Integer, g As Integer, b As Integer, pct As Double) As Long
     ' Purpose: Return a color that is darker than the original by a % (0.0 to 1.0)
-    ' Arguments:
-    '   r, g, b: integers between 0 and 255 (original RGB components)
-    '   pct: decimal percentage to darken (e.g., 0.15 = 15% darker)
-    ' Returns:
-    '   A Long integer representing the darker RGB color for use in VBA (e.g., RGB() result)
-
-    ' Multiply each color component by (1 - pct) and round to nearest integer
     Dim newR As Integer: newR = Round(r * (1 - pct))
     Dim newG As Integer: newG = Round(g * (1 - pct))
     Dim newB As Integer: newB = Round(b * (1 - pct))
-
-    ' Ensure values stay within valid range
     If newR < 0 Then newR = 0
     If newG < 0 Then newG = 0
     If newB < 0 Then newB = 0
-
-    ' Return the final darker RGB color
     DarkerRGB = RGB(newR, newG, newB)
 End Function
-
 
 ' ----------------------------
 ' Main Macro: Add section banner with highlight bar
 ' ----------------------------
 Sub AddSectionLabelsWithHighlightBar()
-
+    
     ' === USER SETTINGS ===
     Dim sectionInfo As Variant
     sectionInfo = Array( _
@@ -38,28 +26,23 @@ Sub AddSectionLabelsWithHighlightBar()
         Array("Take-home", 12), _
         Array("Conclusion", 13) _
     )
-
+    
     ' === STYLE SETTINGS ===
-
-    ' --- Text font settings ---
-    Dim fontSizeText As Integer: fontSizeText = 20   ' << Change font size of section names
-    Dim fontName As String: fontName = "Calibri"     ' << Change font type here
-
-    ' --- Banner layout settings ---
-    Dim bannerTop As Single: bannerTop = 5           ' << Change vertical position of banner text (higher = more toward top)
-    Dim barYOffset As Single: barYOffset = 5         ' << Vertical gap between text and underline
-    Dim barHeight As Single: barHeight = 2           ' << Height (thickness) of the underline
-
-    ' --- Color settings ---
-    Dim textColorActive As Long: textColorActive = RGB(0, 0, 0)                     ' << Color for active section text (black)
-    Dim textColorInactive As Long: textColorInactive = DarkerRGB(255, 255, 255, 0.15) ' << Inactive text color (15% darker than white)
-    Dim barColorActive As Long: barColorActive = textColorActive                   ' << Active underline color
-    Dim barColorInactive As Long: barColorInactive = textColorInactive             ' << Inactive underline color
-
-    ' --- Bar fit switch ---
-    Dim fitBarToText As Boolean: fitBarToText = True  ' << Set to False if you want all bars equal width
-
-
+    Dim fontSizeText As Integer: fontSizeText = 20         ' << Change font size
+    Dim fontName As String: fontName = "Calibri"           ' << Font type
+    
+    Dim bannerTop As Single: bannerTop = 5                 ' << Vertical top of text
+    Dim barYOffset As Single: barYOffset = 5               ' << Gap between text and bar
+    Dim barHeight As Single: barHeight = 2                 ' << Line thickness
+    
+    Dim fitBarToText As Boolean: fitBarToText = True       ' << TRUE = underline fits text width
+    
+    Dim useLineUnderline As Boolean: useLineUnderline = True ' << TRUE = use line, FALSE = use shape
+    
+    ' === SLIDES THAT NEED INVERTED COLORS ===
+    Dim invertedSlides As Variant
+    invertedSlides = Array(1, 6) ' << CHANGE: list slide numbers (e.g., 5, 6) where background is black
+    
     ' === INTERNAL SETUP ===
     Dim sectionCount As Integer: sectionCount = UBound(sectionInfo) - LBound(sectionInfo) + 1
     Dim sectionNames() As String, sectionStarts() As Integer, sectionEnds() As Integer
@@ -76,7 +59,7 @@ Sub AddSectionLabelsWithHighlightBar()
         sectionStarts(i) = sectionEnds(i - 1) + 1
         sectionEnds(i) = sectionInfo(i)(1)
     Next i
-
+    
     Dim slideWidth As Single: slideWidth = ActivePresentation.PageSetup.slideWidth
     Dim slotWidth As Single: slotWidth = slideWidth / sectionCount
     Dim sld As Slide, shp As Shape
@@ -85,19 +68,40 @@ Sub AddSectionLabelsWithHighlightBar()
     Dim labelWidth As Single, labelLeft As Single, textWidth As Single
     Dim labelTop As Single: labelTop = bannerTop
     Dim barLeft As Single, barWidth As Single
-
-    ' === APPLY TO EACH SLIDE ===
+    Dim textColorActive As Long, textColorInactive As Long, barColorActive As Long, barColorInactive As Long
+    
+    ' === LOOP THROUGH SLIDES ===
     For Each sld In ActivePresentation.Slides
         sldIndex = sld.slideIndex
+        
+        ' Determine if current slide should be inverted (black background)
+        Dim useInverse As Boolean: useInverse = False
+        For i = LBound(invertedSlides) To UBound(invertedSlides)
+            If sldIndex = invertedSlides(i) Then
+                useInverse = True
+                Exit For
+            End If
+        Next i
 
-        ' Remove any previous banner elements
+        ' Define color scheme for this slide
+        If useInverse Then
+            textColorActive = RGB(255, 255, 255)                ' << Color for active section text (white)
+            textColorInactive = DarkerRGB(255, 255, 255, 0.6)   ' << Inactive text color (15% darker than white)
+        Else
+            textColorActive = RGB(0, 0, 0)                      ' << Color for active section text (black)
+            textColorInactive = DarkerRGB(255, 255, 255, 0.15)  ' << Inactive text color (15% darker than white)
+        End If
+        barColorActive = textColorActive                        ' << Active underline color
+        barColorInactive = textColorInactive                    ' << Inactive underline color
+
+        ' Remove previous labels/lines
         For Each shp In sld.Shapes
             If Left(shp.Name, 14) = "SectionLabel_" Or Left(shp.Name, 13) = "SectionLine_" Then
                 shp.Delete
             End If
         Next shp
 
-        ' Identify the current section based on the slide index
+        ' Determine section index
         sectionIndex = -1
         For i = 0 To sectionCount - 1
             If sldIndex >= sectionStarts(i) And sldIndex <= sectionEnds(i) Then
@@ -106,12 +110,12 @@ Sub AddSectionLabelsWithHighlightBar()
             End If
         Next i
 
-        ' Add label and underline bar for each section
+        ' Add labels and bars
         For i = 0 To sectionCount - 1
             isActive = (i = sectionIndex)
             labelCenter = i * slotWidth + slotWidth / 2
 
-            ' Add the section label (text box)
+            ' Create label
             Set shp = sld.Shapes.AddTextbox( _
                 Orientation:=msoTextOrientationHorizontal, _
                 Left:=0, Top:=labelTop, Width:=300, Height:=20)
@@ -129,23 +133,25 @@ Sub AddSectionLabelsWithHighlightBar()
                 .Line.Visible = msoFalse
             End With
 
-            ' Center the label horizontally
             labelWidth = shp.Width
             labelLeft = labelCenter - labelWidth / 2
             If labelLeft < 0 Then labelLeft = 0
             shp.Left = labelLeft
             shp.Locked = msoTrue
 
-            ' === ADD UNDERLINE BAR ===
-            textWidth = shp.TextFrame2.TextRange.BoundWidth
-            barWidth = textWidth
+            ' Add line or shape underline
+            If fitBarToText Then
+                textWidth = shp.TextFrame2.TextRange.BoundWidth
+                barWidth = textWidth
+            Else
+                barWidth = labelWidth
+            End If
             barLeft = labelCenter - barWidth / 2
 
             If useLineUnderline Then
-                ' Add a thin line under the text
                 Set shp = sld.Shapes.AddLine( _
-                    BeginX:=barLeft, BeginY:=labelTop + shp.Height + 1, _
-                    EndX:=barLeft + barWidth, EndY:=labelTop + shp.Height + 1)
+                    BeginX:=barLeft, BeginY:=labelTop + shp.Height + barYOffset, _
+                    EndX:=barLeft + barWidth, EndY:=labelTop + shp.Height + barYOffset)
                 With shp
                     .Name = "SectionLine_" & i
                     .Line.ForeColor.RGB = IIf(isActive, barColorActive, barColorInactive)
@@ -153,9 +159,8 @@ Sub AddSectionLabelsWithHighlightBar()
                     .Locked = msoTrue
                 End With
             Else
-                ' Alternative: rectangle underline
                 Set shp = sld.Shapes.AddShape(msoShapeRectangle, _
-                    Left:=barLeft, Top:=labelTop + shp.Height, Width:=barWidth, Height:=barHeight)
+                    Left:=barLeft, Top:=labelTop + shp.Height + barYOffset, Width:=barWidth, Height:=barHeight)
                 With shp
                     .Name = "SectionLine_" & i
                     .Fill.ForeColor.RGB = IIf(isActive, barColorActive, barColorInactive)
