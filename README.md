@@ -24,7 +24,7 @@
 1. In the VBA window, click anywhere inside the macro code.
 2. Press `F5` or go to **Run → Run Sub/UserForm**.
 
-# ***How to change macro:****
+# ***How to change macro:***
 
 Where can I change the width of the bar:
 
