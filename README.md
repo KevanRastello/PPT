@@ -1,4 +1,4 @@
-If you are tired of wasting time on your powerpoint presentation, you probably need some macro!
+Tired of wasting time on your PowerPoint? You probably need a macro!
 
 # Implement the macro
 
