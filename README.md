@@ -1,3 +1,5 @@
+If you are tired of wasting time on your powerpoint presentation, you probably need some macro!
+
 # Implement the macro
 
 #### 🧰 1. **Enable Developer Tab (if not already visible)**
