@@ -21,6 +21,8 @@ Tired of wasting time on your PowerPoint? You probably need a macro!
 1. In the VBA editor, go to **Insert → Module**.
 2. Paste this code:
 
+---
+
 #### ▶️ 4. **Run the Macro**
 
 1. In the VBA window, click anywhere inside the macro code.
