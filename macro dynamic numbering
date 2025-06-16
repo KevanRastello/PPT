@@ -1,1 +1,59 @@
+Sub AddCustomSlideNumbers()
 
+    ' === USER SETTINGS ===
+    Dim startSlide As Integer: startSlide = 2      ' << First slide to number
+    Dim endSlide As Integer: endSlide = 14         ' << Last slide to number
+    
+    Dim fontSize As Integer: fontSize = 18         ' << Font size
+    Dim fontName As String: fontName = "Calibri"   ' << Font type
+    Dim marginRight As Single: marginRight = 20    ' << Distance from right edge
+    Dim marginBottom As Single: marginBottom = 15  ' << Distance from bottom edge
+    
+    Dim textColor As Long: textColor = RGB(0, 0, 0) ' << Font color (black)
+
+    ' === INTERNAL SETUP ===
+    Dim sld As Slide, shp As Shape
+    Dim slideWidth As Single: slideWidth = ActivePresentation.PageSetup.slideWidth
+    Dim slideHeight As Single: slideHeight = ActivePresentation.PageSetup.slideHeight
+
+    Dim currentNumber As Integer: currentNumber = 1
+    Dim totalNumber As Integer: totalNumber = endSlide - startSlide + 1
+
+    ' === APPLY TO EACH SLIDE IN RANGE ===
+    For Each sld In ActivePresentation.Slides
+        If sld.slideIndex >= startSlide And sld.slideIndex <= endSlide Then
+
+            ' Delete old number shape if it exists
+            For Each shp In sld.Shapes
+                If shp.Name = "SlideNum_Custom" Then shp.Delete
+            Next shp
+
+            ' Add text box with number
+            Set shp = sld.Shapes.AddTextbox( _
+                Orientation:=msoTextOrientationHorizontal, _
+                Left:=0, Top:=0, Width:=100, Height:=20)
+
+            With shp
+                .Name = "SlideNum_Custom"
+                .TextFrame2.TextRange.Text = currentNumber & " / " & totalNumber
+                .TextFrame2.TextRange.Font.Size = fontSize
+                .TextFrame2.TextRange.Font.Name = fontName
+                .TextFrame2.TextRange.Font.Fill.ForeColor.RGB = textColor
+                .TextFrame2.TextRange.ParagraphFormat.Alignment = ppAlignRight
+                .TextFrame2.VerticalAnchor = msoAnchorBottom
+                .TextFrame2.AutoSize = msoAutoSizeShapeToFitText ' << Automatically resize box to fit text
+                .Line.Visible = msoFalse
+            End With
+
+            ' Reposition bottom-right
+            shp.Left = slideWidth - shp.Width - marginRight
+            shp.Top = slideHeight - shp.Height - marginBottom
+
+            ' Lock to prevent accidental editing
+            shp.Locked = msoTrue
+
+            currentNumber = currentNumber + 1
+        End If
+    Next sld
+
+End Sub
