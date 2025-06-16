@@ -41,7 +41,7 @@ Tired of wasting time on your PowerPoint? You probably need a macro!
 | Text inactive color      | `textColorInactive`                 | `DarkerRGB(255,255,255,0.15)` |
 | Bar active color         | `barColorActive`                    | same as active text           |
 | Bar inactive color       | `barColorInactive`                  | same as inactive text         |
-| Color inversion          | `invertedSlides`                    | `T` or `F` an specify slide numbers |
+| Color inversion          | `invertedSlides`                    | `T` or `F` and specify slide numbers |
 | Line vs. rectangle bar   | Use `AddLine` instead of `AddShape` |                               |
 
 ---
