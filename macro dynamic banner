@@ -1,85 +1,115 @@
+Sub AddSectionLabelsWithHighlightBar()
 
-Sub AddSectionLabelsWithHighlight()
-    ' === DEFINE YOUR SECTION NAMES AND SLIDE RANGES ===
-    Dim sectionData As Variant
-    sectionData = Array( _
-        Array("Introduction", 1, 3), _
-        Array("Biology", 4, 6), _
-        Array("Model", 7, 10), _
-        Array("Take-home", 11, 13))
+    ' === USER SETTINGS ===
+    Dim sectionInfo As Variant
+    ' Change the number and name of the section
+    sectionInfo = Array( _
+        Array("Introduction", 3), _
+        Array("Biology", 6), _
+        Array("Model", 10), _
+        Array("Take-home", 12), _
+        Array("Conlusion", 13) _
+    )
     
-    ' === STYLE SETTINGS ===
+    Dim fontSizeText As Integer: fontSizeText = 16
+    Dim fontName As String: fontName = "Calibri"
+    
     Dim bannerTop As Single: bannerTop = 5
-    Dim textHeight As Single: textHeight = 20
     Dim barHeight As Single: barHeight = 3
-    Dim textColorActive As Long: textColorActive = RGB(0, 0, 0) ' black
-    Dim textColorInactive As Long: textColorInactive = RGB(150, 150, 150) ' gray
-    Dim barColor As Long: barColor = RGB(0, 176, 240) ' blue highlight
+    Dim spacingPadding As Single: spacingPadding = 10  ' Extra space between labels
 
-    ' === INTERNAL VARIABLES ===
+    Dim textColorActive As Long: textColorActive = RGB(0, 0, 0)
+    Dim textColorInactive As Long: textColorInactive = RGB(150, 150, 150)
+    Dim barColorActive As Long: barColorActive = textColorActive
+    Dim barColorInactive As Long: barColorInactive = textColorInactive
+
+    ' === INTERNAL SETUP ===
+    Dim sectionCount As Integer: sectionCount = UBound(sectionInfo) - LBound(sectionInfo) + 1
+    Dim sectionNames() As String, sectionStarts() As Integer, sectionEnds() As Integer
+    ReDim sectionNames(sectionCount - 1)
+    ReDim sectionStarts(sectionCount - 1)
+    ReDim sectionEnds(sectionCount - 1)
+
+    Dim i As Integer
+    sectionStarts(0) = 1
+    sectionEnds(0) = sectionInfo(0)(1)
+    sectionNames(0) = sectionInfo(0)(0)
+    For i = 1 To sectionCount - 1
+        sectionNames(i) = sectionInfo(i)(0)
+        sectionStarts(i) = sectionEnds(i - 1) + 1
+        sectionEnds(i) = sectionInfo(i)(1)
+    Next i
+
     Dim slideWidth As Single: slideWidth = ActivePresentation.PageSetup.slideWidth
-    Dim sectionCount As Integer: sectionCount = UBound(sectionData) - LBound(sectionData) + 1
-    Dim spacing As Single: spacing = slideWidth / sectionCount
-    Dim i As Integer, sectionIndex As Integer
+    Dim slotWidth As Single: slotWidth = slideWidth / sectionCount
     Dim sld As Slide, shp As Shape
-    Dim secName As String, secStart As Integer, secEnd As Integer
-    Dim labelLeft As Single
+    Dim sldIndex As Integer, sectionIndex As Integer
+    Dim isActive As Boolean, labelCenter As Single
+    Dim labelWidth As Single, labelLeft As Single
+    Dim labelTop As Single: labelTop = bannerTop
 
-    ' === LOOP THROUGH SLIDES ===
+    ' === APPLY TO EACH SLIDE ===
     For Each sld In ActivePresentation.Slides
-        ' Remove existing section elements
+        sldIndex = sld.slideIndex
+
+        ' Remove old elements
         For Each shp In sld.Shapes
             If Left(shp.Name, 14) = "SectionLabel_" Or Left(shp.Name, 13) = "SectionLine_" Then
                 shp.Delete
             End If
         Next shp
 
-        ' Identify current section index
+        ' Determine current section
         sectionIndex = -1
-        For i = 0 To UBound(sectionData)
-            secStart = sectionData(i)(1)
-            secEnd = sectionData(i)(2)
-            If sld.slideIndex >= secStart And sld.slideIndex <= secEnd Then
+        For i = 0 To sectionCount - 1
+            If sldIndex >= sectionStarts(i) And sldIndex <= sectionEnds(i) Then
                 sectionIndex = i
                 Exit For
             End If
         Next i
 
-        ' Add section labels and highlight line
-        For i = 0 To UBound(sectionData)
-            secName = sectionData(i)(0)
-            labelLeft = i * spacing + spacing / 2 - 50 ' Center-ish offset
+        ' Add section labels and bars
+        For i = 0 To sectionCount - 1
+            isActive = (i = sectionIndex)
+            labelCenter = i * slotWidth + slotWidth / 2
 
-            ' Add text label
+            ' Create text label
             Set shp = sld.Shapes.AddTextbox( _
                 Orientation:=msoTextOrientationHorizontal, _
-                Left:=labelLeft, Top:=bannerTop, Width:=100, Height:=textHeight)
-
+                Left:=0, Top:=labelTop, Width:=100, Height:=20)
             With shp
                 .Name = "SectionLabel_" & i
-                .TextFrame2.TextRange.Text = secName
-                .TextFrame2.TextRange.Font.Size = 14
-                .TextFrame2.TextRange.Font.Bold = IIf(i = sectionIndex, msoTrue, msoFalse)
-                .TextFrame2.TextRange.Font.Fill.ForeColor.RGB = _
-                    IIf(i = sectionIndex, textColorActive, textColorInactive)
+                .TextFrame2.TextRange.Text = sectionNames(i)
+                .TextFrame2.TextRange.Font.Size = fontSizeText
+                .TextFrame2.TextRange.Font.Name = fontName
+                .TextFrame2.TextRange.Font.Bold = isActive
+                .TextFrame2.TextRange.Font.Fill.ForeColor.RGB = IIf(isActive, textColorActive, textColorInactive)
                 .TextFrame2.TextRange.ParagraphFormat.Alignment = ppAlignCenter
                 .TextFrame2.VerticalAnchor = msoAnchorMiddle
+                .TextFrame2.AutoSize = msoAutoSizeShapeToFitText
+                .Height = .Height + 4 ' Prevent clipping (like "n" being cut)
                 .Line.Visible = msoFalse
             End With
 
-            ' Add underline bar only for active section
-            If i = sectionIndex Then
-                Set shp = sld.Shapes.AddShape(msoShapeRectangle, _
-                    Left:=labelLeft + 15, Top:=bannerTop + textHeight, _
-                    Width:=70, Height:=barHeight)
-                With shp
-                    .Name = "SectionLine_" & i
-                    .Fill.ForeColor.RGB = barColor
-                    .Line.Visible = msoFalse
-                End With
-            End If
+            ' Reposition to center in slot
+            labelWidth = shp.Width
+            labelLeft = labelCenter - labelWidth / 2
+            shp.Left = labelLeft
+
+            ' Lock the label
+            shp.LockAspectRatio = msoFalse
+            shp.Locked = msoTrue
+
+            ' Add underline bar
+            Set shp = sld.Shapes.AddShape(msoShapeRectangle, _
+                Left:=labelLeft, Top:=labelTop + shp.Height, Width:=labelWidth, Height:=barHeight)
+            With shp
+                .Name = "SectionLine_" & i
+                .Fill.ForeColor.RGB = IIf(isActive, barColorActive, barColorInactive)
+                .Line.Visible = msoFalse
+                .LockAspectRatio = msoFalse
+                .Locked = msoTrue
+            End With
         Next i
     Next sld
 End Sub
-
-
