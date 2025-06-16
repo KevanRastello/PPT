@@ -28,7 +28,9 @@ Tired of wasting time on your PowerPoint? You probably need a macro!
 1. In the VBA window, click anywhere inside the macro code.
 2. Press `F5` or go to **Run → Run Sub/UserForm**.
 
-# How to change macro:
+---
+
+# How to Customize the Dynamic Banner Macro
 
 | Change                   | Variable                            | Example                       |
 | ------------------------ | ----------------------------------- | ----------------------------- |
@@ -43,6 +45,17 @@ Tired of wasting time on your PowerPoint? You probably need a macro!
 | Bar inactive color       | `barColorInactive`                  | same as inactive text         |
 | Color inversion          | `invertedSlides`                    | `T` or `F` and specify slide numbers |
 | Line vs. rectangle bar   | Use `AddLine` instead of `AddShape` |                               |
+
+# How to Customize the Dynamic Numbering Macro
+
+| Feature                          | Description                                              |
+| -------------------------------- | -------------------------------------------------------- |
+| `startSlide`, `endSlide`         | Define the slide range where slide numbers appear.       |
+| `invertColorSlides = Array(...)` | Set which slide numbers should use white text.           |
+| Text formatting                  | Font name, size, and alignment are applied consistently. |
+| Positioning                      | Bottom-right placement with margins.                     |
+| Text fit                         | Automatically sizes the box so numbers stay on one line. |
+| Locked                           | Shape is locked to avoid accidental edits.               |
 
 ---
 
